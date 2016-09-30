@@ -34,6 +34,28 @@ class ServerConfig
   #   # in ServerConfig
   #   @logger.info(@properties["ml.content-db"])
   # end
+  def setup_vlc()
+    r = execute_query %Q{
+xquery version "1.0-ml";
+
+import module namespace sem = "http://marklogic.com/semantics" at "/MarkLogic/semantics.xqy";
+  
+let $query := '
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+INSERT DATA
+{
+ <http://bluetorch.us/jukebox/vlc> rdfs:Resource "#{@properties["ml.vlc-http"]}" .
+ <http://bluetorch.us/jukebox/vlc> <http://bluetorch.us/jukebox/vlc#password> "#{@properties["ml.vlc-password"]}"
+}
+'
+return sem:sparql-update($query)
+},
+    { :app_name => @properties["ml.app-name"] }
+
+    r.body = parse_json r.body
+    logger.info r.body
+
+  end
 
   #
   # to create a method that doesn't require an environment (local, prod, etc)
