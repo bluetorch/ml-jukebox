@@ -13,7 +13,7 @@ class ServerConfig
   # In ruby this is called monkey patching
   #
   # first you would rename the original method
-  # alias_method :original_deploy_modules, :deploy_modules
+  alias_method :original_deploy_modules, :deploy_modules
 
   # then you would define your new method
   # def deploy_modules
@@ -34,19 +34,21 @@ class ServerConfig
   #   # in ServerConfig
   #   @logger.info(@properties["ml.content-db"])
   # end
-  def setup_vlc()
+  def deploy_modules
     r = execute_query %Q{
 xquery version "1.0-ml";
 
 import module namespace sem = "http://marklogic.com/semantics" at "/MarkLogic/semantics.xqy";
   
 let $query := '
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-INSERT DATA
+DELETE { <http://bluetorch.us/jukebox/vlc> ?p ?o . }
+INSERT 
 {
- <http://bluetorch.us/jukebox/vlc> rdfs:Resource "#{@properties["ml.vlc-http"]}" .
- <http://bluetorch.us/jukebox/vlc> <http://bluetorch.us/jukebox/vlc#password> "#{@properties["ml.vlc-password"]}"
+ <http://bluetorch.us/jukebox/vlc> <http://bluetorch.us/jukebox/vlc/url#internal> "#{@properties["ml.vlc-internal-http"]}" .
+ <http://bluetorch.us/jukebox/vlc> <http://bluetorch.us/jukebox/vlc/url#external> "#{@properties["ml.vlc-external-http"]}" .
+ <http://bluetorch.us/jukebox/vlc> <http://bluetorch.us/jukebox/vlc#password> "#{@properties["ml.vlc-password"]}" .
 }
+WHERE {  <http://bluetorch.us/jukebox/vlc> ?p ?o . }
 '
 return sem:sparql-update($query)
 },
@@ -54,7 +56,7 @@ return sem:sparql-update($query)
 
     r.body = parse_json r.body
     logger.info r.body
-
+    original_deploy_modules
   end
 
   #
